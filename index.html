@@ -726,8 +726,8 @@
 
             tbody.innerHTML = registros.map(r => `
                 <tr>
-                    <td><strong>${r.regional || '-'}</strong></td>
-                    <td><span class="status-badge $${r.status === 'Em manutenção' ? 'badge-em-manutencao' : 'badge-finalizada'}">$${r.status}</span></td>
+<td><strong>${r.regional || '-'}</strong></td>
+                    <td><span class="status-badge ${r.status === 'Em manutenção' ? 'badge-em-manutencao' : 'badge-finalizada'}">${r.status}</span></td>
                     <td>${r.frota}</td>
                     <td>${r.placa}</td>
                     <td>${r.cidade}</td>
@@ -743,6 +743,8 @@
                     <td>${r.cidadeVeiculoReserva || '-'}</td>
                     <td>${r.impactouEquipe}</td>
                     <td>${r.descricaoImpacto || '-'}</td>
+                    <td>
+
                     <td>
                         <button class="btn-editar" onclick="editar('${r.id}')">✏️</button>
                         <button class="btn-excluir" onclick="excluir('${r.id}')">🗑️</button>
@@ -771,57 +773,82 @@
         }
 
         // Exportar Excel
-        window.exportarExcel = function() {
-            if (dados.length === 0) {
-                alert('⚠️ Não há dados para exportar!');
-                return;
-            }
+window.exportarExcel = function() {
+    if (dados.length === 0) {
+        alert('⚠️ Não há dados para exportar!');
+        return;
+    }
 
-            const filtroStatus = document.getElementById('filtroStatus').value;
-            const filtroRegional = document.getElementById('filtroRegional').value;
-            
-            let registros = dados;
-            
-            if (filtroStatus !== 'todos') {
-                registros = registros.filter(d => d.status === filtroStatus);
-            }
-            
-            if (filtroRegional !== 'todos') {
-                registros = registros.filter(d => d.regional === filtroRegional);
-            }
+    const filtroStatus = document.getElementById('filtroStatus').value;
+    const filtroRegional = document.getElementById('filtroRegional').value;
+    
+    let registros = dados;
+    
+    if (filtroStatus !== 'todos') {
+        registros = registros.filter(d => d.status === filtroStatus);
+    }
+    
+    if (filtroRegional !== 'todos') {
+        registros = registros.filter(d => d.regional === filtroRegional);
+    }
 
-            let csv = '\uFEFF';
-            csv += 'Regional;Status;Frota;Placa;Cidade;Data Início;Data Retorno;Dias em Manutenção;Chamado;Descrição Defeito;Observação;';
-            csv += 'Tem Veículo Reserva;Data Recebimento Reserva;Tipo Veículo Reserva;Cidade Veículo Reserva;Impactou Equipe;Descrição do Impacto\n';
+    if (registros.length === 0) {
+        alert('⚠️ Nenhum registro encontrado com os filtros aplicados!');
+        return;
+    }
 
-            registros.forEach(r => {
-                csv += `${r.regional || ''};`;
-                csv += `${r.status};`;
-                csv += `${r.frota};`;
-                csv += `${r.placa};`;
-                csv += `${r.cidade};`;
-                csv += `${formatarData(r.dataInicio)};`;
-                csv += `${formatarData(r.dataRetorno)};`;
-                csv += `${r.diasManutencao || ''};`;
-                csv += `${r.chamado || ''};`;
-                csv += `${r.descricaoDefeito || ''};`;
-                csv += `${r.observacao || ''};`;
-                csv += `${r.temVeiculoReserva};`;
-                csv += `${formatarData(r.dataRecebimentoReserva)};`;
-                csv += `${r.tipoVeiculoReserva || ''};`;
-                csv += `${r.cidadeVeiculoReserva || ''};`;
-                csv += `${r.impactouEquipe};`;
-                csv += `${r.descricaoImpacto || ''}\n`;
-            });
+    // Função para limpar dados e evitar quebra de linha
+    function limparTexto(texto) {
+        if (!texto || texto === '-') return '';
+        return String(texto)
+            .replace(/\r\n/g, ' ')  // Remove quebras de linha Windows
+            .replace(/\n/g, ' ')     // Remove quebras de linha Unix
+            .replace(/\r/g, ' ')     // Remove quebras de linha Mac
+            .replace(/;/g, ',')      // Substitui ; por , para não quebrar CSV
+            .replace(/"/g, '""')     // Escapa aspas duplas
+            .trim();                 // Remove espaços extras
+    }
 
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = 'veiculos_manutencao_' + new Date().toISOString().split('T')[0] + '.csv';
-            link.click();
-            
-            alert('✅ Excel exportado com sucesso!');
-        };
+    // Cabeçalho do CSV
+    let csv = '\uFEFF'; // BOM para UTF-8
+    csv += 'Regional;Status;Frota;Placa;Cidade;Data Início;Data Retorno;Dias;Chamado;';
+    csv += 'Descrição Defeito;Observação;Tem Reserva;Data Receb. Reserva;Tipo Reserva;';
+    csv += 'Cidade Reserva;Impactou Equipe;Descrição Impacto\n';
+
+    // Dados - cada registro em UMA linha
+    registros.forEach(r => {
+        csv += `${limparTexto(r.regional)};`;
+        csv += `${limparTexto(r.status)};`;
+        csv += `${limparTexto(r.frota)};`;
+        csv += `${limparTexto(r.placa)};`;
+        csv += `${limparTexto(r.cidade)};`;
+        csv += `${formatarData(r.dataInicio)};`;
+        csv += `${formatarData(r.dataRetorno)};`;
+        csv += `${limparTexto(r.diasManutencao)};`;
+        csv += `${limparTexto(r.chamado)};`;
+        csv += `${limparTexto(r.descricaoDefeito)};`;
+        csv += `${limparTexto(r.observacao)};`;
+        csv += `${limparTexto(r.temVeiculoReserva)};`;
+        csv += `${formatarData(r.dataRecebimentoReserva)};`;
+        csv += `${limparTexto(r.tipoVeiculoReserva)};`;
+        csv += `${limparTexto(r.cidadeVeiculoReserva)};`;
+        csv += `${limparTexto(r.impactouEquipe)};`;
+        csv += `${limparTexto(r.descricaoImpacto)}\n`;
+    });
+
+    // Criar e baixar arquivo
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    
+    // Nome do arquivo com data
+    const dataHoje = new Date().toISOString().split('T')[0];
+    link.download = `veiculos_manutencao_${dataHoje}.csv`;
+    
+    link.click();
+    
+    alert(`✅ Excel exportado com sucesso!\n\nTotal de registros: ${registros.length}`);
+};
 
         // Exportar Word
         window.exportarWord = function() {
