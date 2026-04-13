@@ -238,7 +238,7 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1700px;
+            min-width: 1800px;
             background: white;
         }
 
@@ -395,6 +395,16 @@
                 </select>
             </div>
             <div class="filtro-linha">
+                <label>Classe Veículo:</label>
+                <select id="filtroClasse" onchange="filtrar()">
+                    <option value="todos">Todas</option>
+                    <option value="Caminhonetes">Caminhonetes</option>
+                    <option value="Veículos de passageiro">Veículos de passageiro</option>
+                    <option value="Caminhões leves">Caminhões leves</option>
+                    <option value="Caminhões pesados">Caminhões pesados</option>
+                </select>
+            </div>
+            <div class="filtro-linha">
                 <label>Status:</label>
                 <select id="filtroStatus" onchange="filtrar()">
                     <option value="todos">Todos</option>
@@ -431,6 +441,16 @@
                         <div class="campo">
                             <label>Frota *</label>
                             <input type="text" name="frota" required>
+                        </div>
+                        <div class="campo">
+                            <label>Classe do Veículo *</label>
+                            <select name="classeVeiculo" required>
+                                <option value="">Selecione...</option>
+                                <option value="Caminhonetes">Caminhonetes</option>
+                                <option value="Veículos de passageiro">Veículos de passageiro</option>
+                                <option value="Caminhões leves">Caminhões leves</option>
+                                <option value="Caminhões pesados">Caminhões pesados</option>
+                            </select>
                         </div>
                         <div class="campo">
                             <label>Placa *</label>
@@ -538,6 +558,7 @@
                         <th>Regional</th>
                         <th>Status</th>
                         <th>Frota</th>
+                        <th>Classe Veículo</th>
                         <th>Placa</th>
                         <th>Cidade</th>
                         <th>Data Início</th>
@@ -557,7 +578,7 @@
                 </thead>
                 <tbody id="tbody">
                     <tr>
-                        <td colspan="18" class="loading">🔄 Carregando dados...</td>
+                        <td colspan="19" class="loading">🔄 Carregando dados...</td>
                     </tr>
                 </tbody>
             </table>
@@ -708,6 +729,7 @@
             const tbody = document.getElementById('tbody');
             const filtroStatus = document.getElementById('filtroStatus').value;
             const filtroRegional = document.getElementById('filtroRegional').value;
+            const filtroClasse = document.getElementById('filtroClasse').value;
 
             let registros = dados;
             
@@ -719,16 +741,21 @@
                 registros = registros.filter(d => d.regional === filtroRegional);
             }
 
+            if (filtroClasse !== 'todos') {
+                registros = registros.filter(d => d.classeVeiculo === filtroClasse);
+            }
+
             if (registros.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="18" class="vazio">📋 Nenhum registro encontrado</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="19" class="vazio">📋 Nenhum registro encontrado</td></tr>';
                 return;
             }
 
             tbody.innerHTML = registros.map(r => `
                 <tr>
-<td><strong>${r.regional || '-'}</strong></td>
-                    <td><span class="status-badge ${r.status === 'Em manutenção' ? 'badge-em-manutencao' : 'badge-finalizada'}">${r.status}</span></td>
+                    <td><strong>${r.regional || '-'}</strong></td>
+                    <td><span class="status-badge $${r.status === 'Em manutenção' ? 'badge-em-manutencao' : 'badge-finalizada'}">$${r.status}</span></td>
                     <td>${r.frota}</td>
+                    <td>${r.classeVeiculo || '-'}</td>
                     <td>${r.placa}</td>
                     <td>${r.cidade}</td>
                     <td>${formatarData(r.dataInicio)}</td>
@@ -743,8 +770,6 @@
                     <td>${r.cidadeVeiculoReserva || '-'}</td>
                     <td>${r.impactouEquipe}</td>
                     <td>${r.descricaoImpacto || '-'}</td>
-                    <td>
-
                     <td>
                         <button class="btn-editar" onclick="editar('${r.id}')">✏️</button>
                         <button class="btn-excluir" onclick="excluir('${r.id}')">🗑️</button>
@@ -773,89 +798,81 @@
         }
 
         // Exportar Excel
-window.exportarExcel = function() {
-    if (dados.length === 0) {
-        alert('⚠️ Não há dados para exportar!');
-        return;
-    }
+        window.exportarExcel = function() {
+            if (dados.length === 0) {
+                alert('⚠️ Não há dados para exportar!');
+                return;
+            }
 
-    const filtroStatus = document.getElementById('filtroStatus').value;
-    const filtroRegional = document.getElementById('filtroRegional').value;
-    
-    let registros = dados;
-    
-    if (filtroStatus !== 'todos') {
-        registros = registros.filter(d => d.status === filtroStatus);
-    }
-    
-    if (filtroRegional !== 'todos') {
-        registros = registros.filter(d => d.regional === filtroRegional);
-    }
+            const filtroStatus = document.getElementById('filtroStatus').value;
+            const filtroRegional = document.getElementById('filtroRegional').value;
+            const filtroClasse = document.getElementById('filtroClasse').value;
+            
+            let registros = dados;
+            
+            if (filtroStatus !== 'todos') {
+                registros = registros.filter(d => d.status === filtroStatus);
+            }
+            
+            if (filtroRegional !== 'todos') {
+                registros = registros.filter(d => d.regional === filtroRegional);
+            }
 
-    if (registros.length === 0) {
-        alert('⚠️ Nenhum registro encontrado com os filtros aplicados!');
-        return;
-    }
+            if (filtroClasse !== 'todos') {
+                registros = registros.filter(d => d.classeVeiculo === filtroClasse);
+            }
 
-    // Função para limpar dados e evitar quebra de linha
-    function limparTexto(texto) {
-        if (!texto || texto === '-') return '';
-        return String(texto)
-            .replace(/\r\n/g, ' ')  // Remove quebras de linha Windows
-            .replace(/\n/g, ' ')     // Remove quebras de linha Unix
-            .replace(/\r/g, ' ')     // Remove quebras de linha Mac
-            .replace(/;/g, ',')      // Substitui ; por , para não quebrar CSV
-            .replace(/"/g, '""')     // Escapa aspas duplas
-            .trim();                 // Remove espaços extras
-    }
+            if (registros.length === 0) {
+                alert('⚠️ Nenhum registro encontrado com os filtros aplicados!');
+                return;
+            }
 
-    // Cabeçalho do CSV
-    let csv = '\uFEFF'; // BOM para UTF-8
-    csv += 'Regional;Status;Frota;Placa;Cidade;Data Início;Data Retorno;Dias;Chamado;';
-    csv += 'Descrição Defeito;Observação;Tem Reserva;Data Receb. Reserva;Tipo Reserva;';
-    csv += 'Cidade Reserva;Impactou Equipe;Descrição Impacto\n';
+            // Função para limpar dados e evitar quebra de linha
+            function limparTexDescrição Defeito;Observação;Tem Reserva;Data Receb. Reserva;Tipo Reserva;';
+            csv += 'Cidade Reserva;Impactou Equipe;Descrição Impacto\n';
 
-    // Dados - cada registro em UMA linha
-    registros.forEach(r => {
-        csv += `${limparTexto(r.regional)};`;
-        csv += `${limparTexto(r.status)};`;
-        csv += `${limparTexto(r.frota)};`;
-        csv += `${limparTexto(r.placa)};`;
-        csv += `${limparTexto(r.cidade)};`;
-        csv += `${formatarData(r.dataInicio)};`;
-        csv += `${formatarData(r.dataRetorno)};`;
-        csv += `${limparTexto(r.diasManutencao)};`;
-        csv += `${limparTexto(r.chamado)};`;
-        csv += `${limparTexto(r.descricaoDefeito)};`;
-        csv += `${limparTexto(r.observacao)};`;
-        csv += `${limparTexto(r.temVeiculoReserva)};`;
-        csv += `${formatarData(r.dataRecebimentoReserva)};`;
-        csv += `${limparTexto(r.tipoVeiculoReserva)};`;
-        csv += `${limparTexto(r.cidadeVeiculoReserva)};`;
-        csv += `${limparTexto(r.impactouEquipe)};`;
-        csv += `${limparTexto(r.descricaoImpacto)}\n`;
-    });
+            // Dados - cada registro em UMA linha
+            registros.forEach(r => {
+                csv += `${limparTexto(r.regional)};`;
+                csv += `${limparTexto(r.status)};`;
+                csv += `${limparTexto(r.frota)};`;
+                csv += `${limparTexto(r.classeVeiculo)};`;
+                csv += `${limparTexto(r.placa)};`;
+                csv += `${limparTexto(r.cidade)};`;
+                csv += `${formatarData(r.dataInicio)};`;
+                csv += `${formatarData(r.dataRetorno)};`;
+                csv += `${limparTexto(r.diasManutencao)};`;
+                csv += `${limparTexto(r.chamado)};`;
+                csv += `${limparTexto(r.descricaoDefeito)};`;
+                csv += `${limparTexto(r.observacao)};`;
+                csv += `${limparTexto(r.temVeiculoReserva)};`;
+                csv += `${formatarData(r.dataRecebimentoReserva)};`;
+                csv += `${limparTexto(r.tipoVeiculoReserva)};`;
+                csv += `${limparTexto(r.cidadeVeiculoReserva)};`;
+                csv += `${limparTexto(r.impactouEquipe)};`;
+                csv += `${limparTexto(r.descricaoImpacto)}\n`;
+            });
 
-    // Criar e baixar arquivo
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    
-    // Nome do arquivo com data
-    const dataHoje = new Date().toISOString().split('T')[0];
-    link.download = `veiculos_manutencao_${dataHoje}.csv`;
-    
-    link.click();
-    
-    alert(`✅ Excel exportado com sucesso!\n\nTotal de registros: ${registros.length}`);
-};
+            // Criar e baixar arquivo
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            
+            // Nome do arquivo com data
+            const dataHoje = new Date().toISOString().split('T')[0];
+            link.download = `veiculos_manutencao_${dataHoje}.csv`;
+            
+            link.click();
+            
+            alert(`✅ Excel exportado com sucesso!\n\nTotal de registros: ${registros.length}`);
+        };
 
         // Exportar Word
         window.exportarWord = function() {
             if (dados.length === 0) {
                 alert('⚠️ Não há dados para exportar!');
-                return
-}
+                return;
+            }
 
             const filtroStatus = document.getElementById('filtroStatus').value;
             const filtroRegional = document.getElementById('filtroRegional').value;
@@ -904,6 +921,7 @@ h1{color:#0f2027;font-size:2em;margin-bottom:8px}
 .separador{border:none;border-top:2px dashed #ccc;margin:35px 0}
 .rodape{margin-top:50px;text-align:center;color:#999;font-size:0.9em;border-top:2px solid #ddd;padding-top:20px}
 .regional-destaque{background:#2c5364;color:white;padding:8px 15px;border-radius:5px;display:inline-block;margin-bottom:10px}
+.classe-badge{background:#ffc107;color:#000;padding:6px 12px;border-radius:4px;font-weight:bold;display:inline-block}
 @media print{
     body{margin:20px}
     .veiculo{page-break-inside:avoid}
@@ -930,6 +948,11 @@ h1{color:#0f2027;font-size:2em;margin-bottom:8px}
     <div class="topico">
         <span class="label">🗺️ Regional:</span>
         <span class="valor"><span class="regional-destaque">${r.regional || 'Não informada'}</span></span>
+    </div>
+    
+    <div class="topico">
+        <span class="label">🚙 Classe do Veículo:</span>
+        <span class="valor"><span class="classe-badge">${r.classeVeiculo || 'Não informada'}</span></span>
     </div>
     
     <div class="topico">
