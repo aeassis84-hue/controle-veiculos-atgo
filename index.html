@@ -753,7 +753,7 @@
             tbody.innerHTML = registros.map(r => `
                 <tr>
                     <td><strong>${r.regional || '-'}</strong></td>
-                    <td><span class="status-badge $${r.status === 'Em manutenção' ? 'badge-em-manutencao' : 'badge-finalizada'}">$${r.status}</span></td>
+                    <td><span class="status-badge ${r.status === 'Em manutenção' ? 'badge-em-manutencao' : 'badge-finalizada'}">$${r.status}</span></td>
                     <td>${r.frota}</td>
                     <td>${r.classe || '<span style="color:#dc3545;font-weight:bold">⚠️ Não informada</span>'}</td>
                     <td>${r.placa}</td>
