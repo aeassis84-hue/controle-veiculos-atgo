@@ -922,7 +922,7 @@
             console.error(mensagem, erro);
             const errorBox = document.getElementById('errorBox');
             errorBox.style.display = 'block';
-            errorBox.innerHTML = `<strong>❌ Erro:</strong> $${mensagem}<br><small>$${erro?.message || erro}</small>`;
+            errorBox.innerHTML = `<strong>❌ Erro:</strong> ${mensagem}<br><small>${erro?.message || erro}</small>`;
             
             atualizarStatusConexao(false);
         }
@@ -1149,7 +1149,7 @@
             tbody.innerHTML = registros.map(r => `
                 <tr>
                     <td><strong>${r.regional || '-'}</strong></td>
-                    <td><span class="status-badge $${r.status === 'Em manutenção' ? 'badge-em-manutencao' : 'badge-finalizada'}">$${r.status}</span></td>
+                    <td><span class="status-badge ${r.status === 'Em manutenção' ? 'badge-em-manutencao' : 'badge-finalizada'}">${r.status}</span></td>
                     <td>${r.frota}</td>
                     <td>${r.classe || '-'}</td>
                     <td>${r.placa}</td>
@@ -1360,7 +1360,7 @@
 
                 if (campos.length !== 7) {
                     erros++;
-                    errosDetalhados.push(`Linha $${i + 1}: formato inválido (esperado 7 campos, encontrado $${campos.length})`);
+                    errosDetalhados.push(`Linha ${i + 1}: formato inválido (esperado 7 campos, encontrado ${campos.length})`);
                     continue;
                 }
 
@@ -1375,7 +1375,7 @@
                 const classesValidas = ['Caminhonetes', 'Veículos de passageiro', 'Caminhões leves', 'Caminhões pesados'];
                 if (!classesValidas.includes(classe)) {
                     erros++;
-                    errosDetalhados.push(`Linha $${i + 1}: classe inválida "$${classe}"`);
+                    errosDetalhados.push(`Linha ${i + 1}: classe inválida "${classe}"`);
                     continue;
                 }
 
@@ -1388,7 +1388,7 @@
                 const regionaisValidas = ['Linhas', 'Centro', 'Norte', 'Sudeste', 'Triângulo', 'Leste'];
                 if (!regionaisValidas.includes(regional)) {
                     erros++;
-                    errosDetalhados.push(`Linha $${i + 1}: regional inválida "$${regional}"`);
+                    errosDetalhados.push(`Linha ${i + 1}: regional inválida "${regional}"`);
                     continue;
                 }
 
@@ -1405,7 +1405,7 @@
                     sucesso++;
                 } catch (error) {
                     erros++;
-                    errosDetalhados.push(`Linha $${i + 1}: erro ao salvar - $${error.message}`);
+                    errosDetalhados.push(`Linha ${i + 1}: erro ao salvar - ${error.message}`);
                 }
             }
 
@@ -1433,7 +1433,7 @@
             csv += 'Número;Placa;Classe;Próprio/Locado;Regional;Equipe;Local\n';
 
             dadosFrota.forEach(v => {
-                csv += `$${v.numero};$${v.placa};$${v.classe};$${v.proprioLocado};$${v.regional};$${v.equipe};${v.local}\n`;
+                csv += `${v.numero};${v.placa};${v.classe};${v.proprioLocado};${v.regional};${v.equipe};${v.local}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -1454,7 +1454,7 @@
         function formatarData(data) {
             if (!data) return '-';
             const partes = data.split('-');
-            return `$${partes[2]}/$${partes[1]}/${partes[0]}`;
+            return `${partes[2]}/${partes[1]}/${partes[0]}`;
         }
 
         // ============================================
@@ -1492,11 +1492,11 @@
             csv += 'Cidade Reserva;Impactou Equipe;Descrição Impacto\n';
 
             registros.forEach(r => {
-                csv += `$${limpar(r.regional)};$${limpar(r.status)};$${limpar(r.frota)};$${limpar(r.classe)};`;
-                csv += `$${limpar(r.placa)};$${limpar(r.cidade)};$${formatarData(r.dataInicio)};$${formatarData(r.dataRetorno)};`;
-                csv += `$${limpar(r.diasManutencao)};$${limpar(r.chamado)};$${limpar(r.descricaoDefeito)};$${limpar(r.observacao)};`;
-                csv += `$${limpar(r.temVeiculoReserva)};$${formatarData(r.dataRecebimentoReserva)};${limpar(r.tipoVeiculoReserva)};`;
-                csv += `$${limpar(r.cidadeVeiculoReserva)};$${limpar(r.impactouEquipe)};${limpar(r.descricaoImpacto)}\n`;
+                csv += `${limpar(r.regional)};${limpar(r.status)};${limpar(r.frota)};${limpar(r.classe)};`;
+                csv += `${limpar(r.placa)};${limpar(r.cidade)};${formatarData(r.dataInicio)};${formatarData(r.dataRetorno)};`;
+                csv += `${limpar(r.diasManutencao)};${limpar(r.chamado)};${limpar(r.descricaoDefeito)};${limpar(r.observacao)};`;
+                csv += `${limpar(r.temVeiculoReserva)};${formatarData(r.dataRecebimentoReserva)};${limpar(r.tipoVeiculoReserva)};`;
+                csv += `${limpar(r.cidadeVeiculoReserva)};${limpar(r.impactouEquipe)};${limpar(r.descricaoImpacto)}\n`;
             });
 
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
