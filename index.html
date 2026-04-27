@@ -45,6 +45,53 @@
             font-size: 1.1em;
         }
 
+        /* SISTEMA DE ABAS */
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 25px;
+            border-bottom: 3px solid #e0e0e0;
+            flex-wrap: wrap;
+        }
+
+        .tab {
+            padding: 14px 28px;
+            background: #f0f0f0;
+            border: none;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 15px;
+            color: #666;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+
+        .tab:hover {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .tab.active {
+            background: linear-gradient(135deg, #0f2027 0%, #2c5364 100%);
+            color: white;
+            border-bottom: 3px solid #ffc107;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.4s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         .status-conexao {
             text-align: center;
             padding: 10px;
@@ -108,6 +155,15 @@
             background: #1e4077;
         }
 
+        .btn-importar {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-importar:hover {
+            background: #138496;
+        }
+
         .btn-salvar {
             background: #007bff;
             color: white;
@@ -157,6 +213,7 @@
             gap: 12px;
             align-items: center;
             margin-bottom: 12px;
+            flex-wrap: wrap;
         }
 
         label {
@@ -238,7 +295,6 @@
         table {
             width: 100%;
             border-collapse: collapse;
-            min-width: 1800px;
             background: white;
         }
 
@@ -252,6 +308,7 @@
             text-align: left;
             font-weight: 600;
             font-size: 13px;
+            white-space: nowrap;
         }
 
         td {
@@ -315,6 +372,18 @@
             opacity: 0.95;
         }
 
+        .stat-card.disponivel {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        }
+
+        .stat-card.manutencao {
+            background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+        }
+
+        .stat-card.percentual {
+            background: linear-gradient(135deg, #007bff 0%, #17a2b8 100%);
+        }
+
         .info-exportacao {
             background: #e7f3ff;
             padding: 12px;
@@ -331,6 +400,49 @@
             color: #666;
         }
 
+        .import-area {
+            background: white;
+            padding: 20px;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+
+        .import-area textarea {
+            width: 100%;
+            min-height: 200px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+        }
+
+        .import-instructions {
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ffc107;
+        }
+
+        .import-instructions h4 {
+            margin-bottom: 10px;
+            color: #856404;
+        }
+
+        .import-instructions code {
+            background: #fff;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+
+        .error-box {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            border-left: 4px solid #dc3545;
+        }
+
         @media (max-width: 768px) {
             .form-grid {
                 grid-template-columns: 1fr;
@@ -340,6 +452,12 @@
             }
             button {
                 width: 100%;
+            }
+            .tabs {
+                flex-direction: column;
+            }
+            .tab {
+                border-radius: 6px;
             }
         }
     </style>
@@ -356,241 +474,432 @@
             🔄 Conectando ao servidor...
         </div>
 
-        <!-- Estatísticas -->
-        <div class="stats">
-            <div class="stat-card">
-                <h3 id="total">0</h3>
-                <p>Total de manutenções</p>
+        <!-- Área de Erro (debug) -->
+        <div id="errorBox" style="display:none;" class="error-box"></div>
+
+        <!-- SISTEMA DE ABAS -->
+        <div class="tabs">
+            <button class="tab active" onclick="trocarAba('manutencao')">🔧 Manutenções</button>
+            <button class="tab" onclick="trocarAba('disponibilidade')">📊 Disponibilidade da Frota</button>
+            <button class="tab" onclick="trocarAba('frota')">🚙 Gestão da Frota</button>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- ABA 1: MANUTENÇÕES -->
+        <!-- ============================================ -->
+        <div id="aba-manutencao" class="tab-content active">
+            <!-- Estatísticas -->
+            <div class="stats">
+                <div class="stat-card">
+                    <h3 id="total">0</h3>
+                    <p>Total de manutenções</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="emManutencao">0</h3>
+                    <p>Veículos em manutenção</p>
+                </div>
+                <div class="stat-card">
+                    <h3 id="finalizado">0</h3>
+                    <p>Manutenções finalizadas</p>
+                </div>
             </div>
-            <div class="stat-card">
-                <h3 id="emManutencao">0</h3>
-                <p>Veículos em manutenção</p>
+
+            <!-- Botões -->
+            <div class="btn-container">
+                <button class="btn-novo" onclick="abrirForm()">➕ Novo Registro</button>
+                <button class="btn-excel" onclick="exportarExcel()">📊 Exportar Excel</button>
+                <button class="btn-word" onclick="exportarWord()">📄 Exportar Word</button>
             </div>
-            <div class="stat-card">
-                <h3 id="finalizado">0</h3>
-                <p>Manutenções finalizadas</p>
+
+            <!-- Filtros -->
+            <div class="filtro-box">
+                <h3>🔍 Filtros</h3>
+                <div class="filtro-linha">
+                    <label>Regional:</label>
+                    <select id="filtroRegional" onchange="filtrar()">
+                        <option value="todos">Todas</option>
+                        <option value="Linhas">Linhas</option>
+                        <option value="Centro">Centro</option>
+                        <option value="Norte">Norte</option>
+                        <option value="Sudeste">Sudeste</option>
+                        <option value="Triângulo">Triângulo</option>
+                        <option value="Leste">Leste</option>
+                    </select>
+                </div>
+                <div class="filtro-linha">
+                    <label>Classe:</label>
+                    <select id="filtroClasse" onchange="filtrar()">
+                        <option value="todos">Todas</option>
+                        <option value="Caminhonetes">Caminhonetes</option>
+                        <option value="Veículos de passageiro">Veículos de passageiro</option>
+                        <option value="Caminhões leves">Caminhões leves</option>
+                        <option value="Caminhões pesados">Caminhões pesados</option>
+                    </select>
+                </div>
+                <div class="filtro-linha">
+                    <label>Status:</label>
+                    <select id="filtroStatus" onchange="filtrar()">
+                        <option value="todos">Todos</option>
+                        <option value="Em manutenção">Em manutenção</option>
+                        <option value="Manutenção finalizada">Manutenção finalizada</option>
+                    </select>
+                </div>
+                <div class="info-exportacao">
+                    ℹ️ <strong>Sistema Online:</strong> Todos os dados são salvos em tempo real e compartilhados com todos os usuários.
+                </div>
+            </div>
+
+            <!-- Formulário -->
+            <div class="formulario" id="formulario">
+                <h2 class="form-titulo">Cadastro de Veículo em Manutenção</h2>
+                
+                <form id="form" onsubmit="salvar(event)">
+                    <div class="form-secao">
+                        <div class="secao-titulo">📋 Dados da Manutenção</div>
+                        <div class="form-grid">
+                            <div class="campo">
+                                <label>Regional *</label>
+                                <select name="regional" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Linhas">Linhas</option>
+                                    <option value="Centro">Centro</option>
+                                    <option value="Norte">Norte</option>
+                                    <option value="Sudeste">Sudeste</option>
+                                    <option value="Triângulo">Triângulo</option>
+                                    <option value="Leste">Leste</option>
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label>Frota *</label>
+                                <input type="text" name="frota" required>
+                            </div>
+                            <div class="campo">
+                                <label>Classe *</label>
+                                <select name="classe" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Caminhonetes">Caminhonetes</option>
+                                    <option value="Veículos de passageiro">Veículos de passageiro</option>
+                                    <option value="Caminhões leves">Caminhões leves</option>
+                                    <option value="Caminhões pesados">Caminhões pesados</option>
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label>Placa *</label>
+                                <input type="text" name="placa" required>
+                            </div>
+                            <div class="campo">
+                                <label>Cidade *</label>
+                                <input type="text" name="cidade" required>
+                            </div>
+                            <div class="campo">
+                                <label>Data Início da Manutenção *</label>
+                                <input type="date" id="dataInicio" name="dataInicio" required>
+                            </div>
+                            <div class="campo">
+                                <label>Data de Retorno da Manutenção</label>
+                                <input type="date" id="dataRetorno" name="dataRetorno">
+                            </div>
+                            <div class="campo">
+                                <label>Dias em Manutenção</label>
+                                <input type="number" id="diasManutencao" name="diasManutencao" readonly style="background:#e9ecef">
+                            </div>
+                            <div class="campo">
+                                <label>Chamado</label>
+                                <input type="text" name="chamado">
+                            </div>
+                            <div class="campo">
+                                <label>Status *</label>
+                                <select name="status" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Em manutenção">Em manutenção</option>
+                                    <option value="Manutenção finalizada">Manutenção finalizada</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-grid" style="margin-top:15px">
+                            <div class="campo">
+                                <label>Descrição do Defeito</label>
+                                <textarea name="descricaoDefeito"></textarea>
+                            </div>
+                            <div class="campo">
+                                <label>Observação</label>
+                                <textarea name="observacao"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-secao">
+                        <div class="secao-titulo">🚘 Veículo Reserva</div>
+                        <div class="form-grid">
+                            <div class="campo">
+                                <label>Tem Veículo Reserva? *</label>
+                                <select name="temVeiculoReserva" required>
+                                    <option value="Não">Não</option>
+                                    <option value="Sim">Sim</option>
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label>Data Recebimento Veículo Reserva</label>
+                                <input type="date" name="dataRecebimentoReserva">
+                            </div>
+                            <div class="campo">
+                                <label>Tipo de Veículo Reserva</label>
+                                <input type="text" name="tipoVeiculoReserva">
+                            </div>
+                            <div class="campo">
+                                <label>Cidade Veículo Reserva</label>
+                                <input type="text" name="cidadeVeiculoReserva">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-secao">
+                        <div class="secao-titulo">⚠️ Impacto na Equipe</div>
+                        <div class="form-grid">
+                            <div class="campo">
+                                <label>Impactou Equipe? *</label>
+                                <select name="impactouEquipe" required>
+                                    <option value="Não">Não</option>
+                                    <option value="Sim">Sim</option>
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label>Descrição do Impacto</label>
+                                <textarea name="descricaoImpacto"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <input type="hidden" name="id">
+
+                    <div style="display:flex;gap:12px;margin-top:25px">
+                        <button type="submit" class="btn-salvar">💾 Salvar</button>
+                        <button type="button" class="btn-cancelar" onclick="fecharForm()">❌ Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tabela -->
+            <div class="tabela-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Regional</th>
+                            <th>Status</th>
+                            <th>Frota</th>
+                            <th>Classe</th>
+                            <th>Placa</th>
+                            <th>Cidade</th>
+                            <th>Data Início</th>
+                            <th>Data Retorno</th>
+                            <th>Dias</th>
+                            <th>Chamado</th>
+                            <th>Descrição Defeito</th>
+                            <th>Observação</th>
+                            <th>Tem Reserva</th>
+                            <th>Data Receb. Reserva</th>
+                            <th>Tipo Reserva</th>
+                            <th>Cidade Reserva</th>
+                            <th>Impactou Equipe</th>
+                            <th>Descrição Impacto</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody">
+                        <tr>
+                            <td colspan="19" class="loading">🔄 Carregando dados...</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
-        <!-- Botões -->
-        <div class="btn-container">
-            <button class="btn-novo" onclick="abrirForm()">➕ Novo Registro</button>
-            <button class="btn-excel" onclick="exportarExcel()">📊 Exportar Excel</button>
-            <button class="btn-word" onclick="exportarWord()">📄 Exportar Word</button>
-        </div>
+        <!-- ============================================ -->
+        <!-- ABA 2: DISPONIBILIDADE DA FROTA -->
+        <!-- ============================================ -->
+        <div id="aba-disponibilidade" class="tab-content">
+            <h2 style="color:#0f2027;margin-bottom:25px">📊 Disponibilidade da Frota</h2>
 
-        <!-- Filtros -->
-        <div class="filtro-box">
-            <h3>🔍 Filtros</h3>
-            <div class="filtro-linha">
-                <label>Regional:</label>
-                <select id="filtroRegional" onchange="filtrar()">
-                    <option value="todos">Todas</option>
-                    <option value="Linhas">Linhas</option>
-                    <option value="Centro">Centro</option>
-                    <option value="Norte">Norte</option>
-                    <option value="Sudeste">Sudeste</option>
-                    <option value="Triângulo">Triângulo</option>
-                    <option value="Leste">Leste</option>
-                </select>
+            <div class="filtro-box">
+                <h3>🔍 Filtros</h3>
+                <div class="filtro-linha">
+                    <label>Regional:</label>
+                    <select id="filtroDispRegional" onchange="atualizarDisponibilidade()">
+                        <option value="todos">Todas</option>
+                        <option value="Linhas">Linhas</option>
+                        <option value="Centro">Centro</option>
+                        <option value="Norte">Norte</option>
+                        <option value="Sudeste">Sudeste</option>
+                        <option value="Triângulo">Triângulo</option>
+                        <option value="Leste">Leste</option>
+                    </select>
+                </div>
+                <div class="filtro-linha">
+                    <label>Classe:</label>
+                    <select id="filtroDispClasse" onchange="atualizarDisponibilidade()">
+                        <option value="todos">Todas</option>
+                        <option value="Caminhonetes">Caminhonetes</option>
+                        <option value="Veículos de passageiro">Veículos de passageiro</option>
+                        <option value="Caminhões leves">Caminhões leves</option>
+                        <option value="Caminhões pesados">Caminhões pesados</option>
+                    </select>
+                </div>
             </div>
-            <div class="filtro-linha">
-                <label>Classe:</label>
-                <select id="filtroClasse" onchange="filtrar()">
-                    <option value="todos">Todas</option>
-                    <option value="Caminhonetes">Caminhonetes</option>
-                    <option value="Veículos de passageiro">Veículos de passageiro</option>
-                    <option value="Caminhões leves">Caminhões leves</option>
-                    <option value="Caminhões pesados">Caminhões pesados</option>
-                </select>
+
+            <div class="stats">
+                <div class="stat-card">
+                    <h3 id="totalFrota">0</h3>
+                    <p>Total de Veículos na Frota</p>
+                </div>
+                <div class="stat-card manutencao">
+                    <h3 id="veiculosManutencao">0</h3>
+                    <p>Veículos em Manutenção<br><small>(sem reserva)</small></p>
+                </div>
+                <div class="stat-card disponivel">
+                    <h3 id="veiculosDisponiveis">0</h3>
+                    <p>Veículos Disponíveis</p>
+                </div>
+                <div class="stat-card percentual">
+                    <h3 id="percentualDisponivel">0%</h3>
+                    <p>Percentual Disponível</p>
+                </div>
             </div>
-            <div class="filtro-linha">
-                <label>Status:</label>
-                <select id="filtroStatus" onchange="filtrar()">
-                    <option value="todos">Todos</option>
-                    <option value="Em manutenção">Em manutenção</option>
-                    <option value="Manutenção finalizada">Manutenção finalizada</option>
-                </select>
-            </div>
+
             <div class="info-exportacao">
-                ℹ️ <strong>Sistema Online:</strong> Todos os dados são salvos em tempo real e compartilhados com todos os usuários.
+                ℹ️ <strong>Observação:</strong> Veículos em manutenção que possuem veículo reserva NÃO são contabilizados como indisponíveis.
             </div>
         </div>
 
-        <!-- Formulário -->
-        <div class="formulario" id="formulario">
-            <h2 class="form-titulo">Cadastro de Veículo em Manutenção</h2>
-            
-            <form id="form" onsubmit="salvar(event)">
-                <!-- Dados da Manutenção -->
-                <div class="form-secao">
-                    <div class="secao-titulo">📋 Dados da Manutenção</div>
-                    <div class="form-grid">
-                        <div class="campo">
-                            <label>Regional *</label>
-                            <select name="regional" required>
-                                <option value="">Selecione...</option>
-                                <option value="Linhas">Linhas</option>
-                                <option value="Centro">Centro</option>
-                                <option value="Norte">Norte</option>
-                                <option value="Sudeste">Sudeste</option>
-                                <option value="Triângulo">Triângulo</option>
-                                <option value="Leste">Leste</option>
-                            </select>
-                        </div>
-                        <div class="campo">
-                            <label>Frota *</label>
-                            <input type="text" name="frota" required>
-                        </div>
-                        <div class="campo">
-                            <label>Classe *</label>
-                            <select name="classe" required>
-                                <option value="">Selecione...</option>
-                                <option value="Caminhonetes">Caminhonetes</option>
-                                <option value="Veículos de passageiro">Veículos de passageiro</option>
-                                <option value="Caminhões leves">Caminhões leves</option>
-                                <option value="Caminhões pesados">Caminhões pesados</option>
-                            </select>
-                        </div>
-                        <div class="campo">
-                            <label>Placa *</label>
-                            <input type="text" name="placa" required>
-                        </div>
-                        <div class="campo">
-                            <label>Cidade *</label>
-                            <input type="text" name="cidade" required>
-                        </div>
-                        <div class="campo">
-                            <label>Data Início da Manutenção *</label>
-                            <input type="date" id="dataInicio" name="dataInicio" required>
-                        </div>
-                        <div class="campo">
-                            <label>Data de Retorno da Manutenção</label>
-                            <input type="date" id="dataRetorno" name="dataRetorno">
-                        </div>
-                        <div class="campo">
-                            <label>Dias em Manutenção</label>
-                            <input type="number" id="diasManutencao" name="diasManutencao" readonly style="background:#e9ecef">
-                        </div>
-                        <div class="campo">
-                            <label>Chamado</label>
-                            <input type="text" name="chamado">
-                        </div>
-                        <div class="campo">
-                            <label>Status *</label>
-                            <select name="status" required>
-                                <option value="">Selecione...</option>
-                                <option value="Em manutenção">Em manutenção</option>
-                                <option value="Manutenção finalizada">Manutenção finalizada</option>
-                            </select>
+        <!-- ============================================ -->
+        <!-- ABA 3: GESTÃO DA FROTA -->
+        <!-- ============================================ -->
+        <div id="aba-frota" class="tab-content">
+            <h2 style="color:#0f2027;margin-bottom:25px">🚙 Gestão da Frota</h2>
+
+            <div class="btn-container">
+                <button class="btn-novo" onclick="abrirFormFrota()">➕ Novo Veículo</button>
+                <button class="btn-importar" onclick="abrirImportacaoLote()">📥 Importação em Lote</button>
+                <button class="btn-excel" onclick="exportarFrotaExcel()">📊 Exportar Excel</button>
+            </div>
+
+            <div class="formulario" id="formularioFrota">
+                <h2 class="form-titulo">Cadastro de Veículo na Frota</h2>
+                
+                <form id="formFrota" onsubmit="salvarFrota(event)">
+                    <div class="form-secao">
+                        <div class="secao-titulo">🚗 Dados do Veículo</div>
+                        <div class="form-grid">
+                            <div class="campo">
+                                <label>Número *</label>
+                                <input type="text" name="numero" required>
+                            </div>
+                            <div class="campo">
+                                <label>Placa *</label>
+                                <input type="text" name="placa" required>
+                            </div>
+                            <div class="campo">
+                                <label>Classe *</label>
+                                <select name="classe" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Caminhonetes">Caminhonetes</option>
+                                    <option value="Veículos de passageiro">Veículos de passageiro</option>
+                                    <option value="Caminhões leves">Caminhões leves</option>
+                                    <option value="Caminhões pesados">Caminhões pesados</option>
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label>Próprio/Locado *</label>
+                                <select name="proprioLocado" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Próprio">Próprio</option>
+                                    <option value="Locado">Locado</option>
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label>Regional *</label>
+                                <select name="regional" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="Linhas">Linhas</option>
+                                    <option value="Centro">Centro</option>
+                                    <option value="Norte">Norte</option>
+                                    <option value="Sudeste">Sudeste</option>
+                                    <option value="<option value="Triângulo">Triângulo</option>
+                                    <option value="Leste">Leste</option>
+                                </select>
+                            </div>
+                            <div class="campo">
+                                <label>Equipe *</label>
+                                <input type="text" name="equipe" required>
+                            </div>
+                            <div class="campo">
+                                <label>Local *</label>
+                                <input type="text" name="local" required>
+                            </div>
                         </div>
                     </div>
-                    <div class="form-grid" style="margin-top:15px">
-                        <div class="campo">
-                            <label>Descrição do Defeito</label>
-                            <textarea name="descricaoDefeito"></textarea>
-                        </div>
-                        <div class="campo">
-                            <label>Observação</label>
-                            <textarea name="observacao"></textarea>
-                        </div>
+
+                    <input type="hidden" name="id">
+
+                    <div style="display:flex;gap:12px;margin-top:25px">
+                        <button type="submit" class="btn-salvar">💾 Salvar</button>
+                        <button type="button" class="btn-cancelar" onclick="fecharFormFrota()">❌ Cancelar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="formulario" id="formularioImportacao">
+                <h2 class="form-titulo">📥 Importação em Lote</h2>
+                
+                <div class="import-instructions">
+                    <h4>📋 Instruções:</h4>
+                    <p><strong>Cole os dados no formato:</strong></p>
+                    <p><code>Número | Placa | Classe | Próprio/Locado | Regional | Equipe | Local</code></p>
+                    <p style="margin-top:10px"><strong>Exemplo:</strong></p>
+                    <p><code>001 | ABC-1234 | Caminhonetes | Próprio | Centro | Equipe A | Goiânia</code></p>
+                    <p><code>002 | DEF-5678 | Veículos de passageiro | Locado | Norte | Equipe B | Anápolis</code></p>
+                    <p style="margin-top:10px;color:#856404">⚠️ Cada linha representa um veículo. Use o separador <strong>|</strong> (pipe) entre os campos.</p>
+                </div>
+
+                <div class="import-area">
+                    <textarea id="dadosImportacao" placeholder="Cole aqui os dados dos veículos (um por linha)..."></textarea>
+                    
+                    <div style="display:flex;gap:12px;margin-top:20px">
+                        <button type="button" class="btn-salvar" onclick="processarImportacao()">📥 Importar Dados</button>
+                        <button type="button" class="btn-cancelar" onclick="fecharImportacao()">❌ Cancelar</button>
                     </div>
                 </div>
+            </div>
 
-                <!-- Veículo Reserva -->
-                <div class="form-secao">
-                    <div class="secao-titulo">🚘 Veículo Reserva</div>
-                    <div class="form-grid">
-                        <div class="campo">
-                            <label>Tem Veículo Reserva? *</label>
-                            <select name="temVeiculoReserva" required>
-                                <option value="Não">Não</option>
-                                <option value="Sim">Sim</option>
-                            </select>
-                        </div>
-                        <div class="campo">
-                            <label>Data Recebimento Veículo Reserva</label>
-                            <input type="date" name="dataRecebimentoReserva">
-                        </div>
-                        <div class="campo">
-                            <label>Tipo de Veículo Reserva</label>
-                            <input type="text" name="tipoVeiculoReserva">
-                        </div>
-                        <div class="campo">
-                            <label>Cidade Veículo Reserva</label>
-                            <input type="text" name="cidadeVeiculoReserva">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Impacto -->
-                <div class="form-secao">
-                    <div class="secao-titulo">⚠️ Impacto na Equipe</div>
-                    <div class="form-grid">
-                        <div class="campo">
-                            <label>Impactou Equipe? *</label>
-                            <select name="impactouEquipe" required>
-                                <option value="Não">Não</option>
-                                <option value="Sim">Sim</option>
-                            </select>
-                        </div>
-                        <div class="campo">
-                            <label>Descrição do Impacto</label>
-                            <textarea name="descricaoImpacto"></textarea>
-                        </div>
-                    </div>
-                </div>
-
-                <input type="hidden" name="id">
-
-                <div style="display:flex;gap:12px;margin-top:25px">
-                    <button type="submit" class="btn-salvar">💾 Salvar</button>
-                    <button type="button" class="btn-cancelar" onclick="fecharForm()">❌ Cancelar</button>
-                </div>
-            </form>
-        </div>
-
-        <!-- Tabela -->
-        <div class="tabela-container">
-            <table>
-                <thead>
-                    <tr>
-                        <th>Regional</th>
-                        <th>Status</th>
-                        <th>Frota</th>
-                        <th>Classe</th>
-                        <th>Placa</th>
-                        <th>Cidade</th>
-                        <th>Data Início</th>
-                        <th>Data Retorno</th>
-                        <th>Dias</th>
-                        <th>Chamado</th>
-                        <th>Descrição Defeito</th>
-                        <th>Observação</th>
-                        <th>Tem Reserva</th>
-                        <th>Data Receb. Reserva</th>
-                        <th>Tipo Reserva</th>
-                        <th>Cidade Reserva</th>
-                        <th>Impactou Equipe</th>
-                        <th>Descrição Impacto</th>
-                        <th>Ações</th>
-                    </tr>
-                </thead>
-                <tbody id="tbody">
-                    <tr>
-                        <td colspan="19" class="loading">🔄 Carregando dados...</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="tabela-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Placa</th>
+                            <th>Classe</th>
+                            <th>Próprio/Locado</th>
+                            <th>Regional</th>
+                            <th>Equipe</th>
+                            <th>Local</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbodyFrota">
+                        <tr>
+                            <td colspan="8" class="loading">🔄 Carregando dados da frota...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
-        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        import { getFirestore, collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
-         // ✅ SUAS CREDENCIAIS DO FIREBASE
+        // Configuração do Firebase
         const firebaseConfig = {
             apiKey: "AIzaSyAywkCT0zu1N5mKVrvWgmqSRi_ukcWaV0o",
             authDomain: "controle-veiculos-atgo.firebaseapp.com",
@@ -600,15 +909,116 @@
             appId: "1:131068974917:web:d0208415fb8d6eb77f102c"
         };
 
-        // Inicializar Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const colecao = collection(db, 'veiculos');
-
+        // Variáveis globais
+        let app, db, colecao, colecaoFrota;
         let dados = [];
+        let dadosFrota = [];
         let editandoId = null;
+        let editandoFrotaId = null;
+        let firebaseIniciado = false;
 
-        // Status de conexão
+        // Função para mostrar erros
+        function mostrarErro(mensagem, erro) {
+            console.error(mensagem, erro);
+            const errorBox = document.getElementById('errorBox');
+            errorBox.style.display = 'block';
+            errorBox.innerHTML = `<strong>❌ Erro:</strong> $${mensagem}<br><small>$${erro?.message || erro}</small>`;
+            
+            atualizarStatusConexao(false);
+        }
+
+        // Inicializar Firebase
+        try {
+            console.log('🔄 Iniciando Firebase...');
+            app = initializeApp(firebaseConfig);
+            db = getFirestore(app);
+            colecao = collection(db, 'veiculos');
+            colecaoFrota = collection(db, 'frota');
+            firebaseIniciado = true;
+            console.log('✅ Firebase iniciado com sucesso!');
+            
+            // Iniciar carregamento de dados
+            carregarDados();
+        } catch (error) {
+            mostrarErro('Falha ao inicializar Firebase', error);
+        }
+
+        // ============================================
+        // CARREGAR DADOS
+        // ============================================
+        function carregarDados() {
+            if (!firebaseIniciado) {
+                mostrarErro('Firebase não está iniciado', 'Tente recarregar a página');
+                return;
+            }
+
+            try {
+                console.log('🔄 Carregando dados de manutenção...');
+                
+                // Carregar manutenções
+                const q = query(colecao, orderBy('frota'));
+                onSnapshot(q, (snapshot) => {
+                    console.log(`✅ Recebidos ${snapshot.size} registros de manutenção`);
+                    dados = [];
+                    snapshot.forEach((docSnap) => {
+                        dados.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    exibir();
+                    atualizarStats();
+                    atualizarDisponibilidade();
+                    atualizarStatusConexao(true);
+                }, (error) => {
+                    mostrarErro('Erro ao carregar manutenções', error);
+                });
+
+                console.log('🔄 Carregando dados da frota...');
+                
+                // Carregar frota
+                const qFrota = query(colecaoFrota, orderBy('numero'));
+                onSnapshot(qFrota, (snapshot) => {
+                    console.log(`✅ Recebidos ${snapshot.size} veículos da frota`);
+                    dadosFrota = [];
+                    snapshot.forEach((docSnap) => {
+                        dadosFrota.push({ id: docSnap.id, ...docSnap.data() });
+                    });
+                    exibirFrota();
+                    atualizarDisponibilidade();
+                }, (error) => {
+                    console.error('Erro ao carregar frota:', error);
+                    // Não mostrar erro crítico se frota estiver vazia
+                    if (error.code !== 'permission-denied') {
+                        mostrarErro('Erro ao carregar frota', error);
+                    }
+                });
+
+            } catch (error) {
+                mostrarErro('Erro ao configurar listeners', error);
+            }
+        }
+
+        // ============================================
+        // SISTEMA DE ABAS
+        // ============================================
+        window.trocarAba = function(aba) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            if (aba === 'manutencao') {
+                document.querySelector('.tab:nth-child(1)').classList.add('active');
+                document.getElementById('aba-manutencao').classList.add('active');
+            } else if (aba === 'disponibilidade') {
+                document.querySelector('.tab:nth-child(2)').classList.add('active');
+                document.getElementById('aba-disponibilidade').classList.add('active');
+                atualizarDisponibilidade();
+            } else if (aba === 'frota') {
+                document.querySelector('.tab:nth-child(3)').classList.add('active');
+                document.getElementById('aba-frota').classList.add('active');
+            }
+        };
+
+        // ============================================
+        // STATUS DE CONEXÃO
+        // ============================================
         function atualizarStatusConexao(conectado) {
             const status = document.getElementById('statusConexao');
             if (conectado) {
@@ -620,28 +1030,14 @@
             }
         }
 
-        // Carregar dados em tempo real
-        const q = query(colecao, orderBy('frota'));
-        onSnapshot(q, (snapshot) => {
-            dados = [];
-            snapshot.forEach((docSnap) => {
-                dados.push({ id: docSnap.id, ...docSnap.data() });
-            });
-            exibir();
-            atualizarStats();
-            atualizarStatusConexao(true);
-        }, (error) => {
-            console.error('Erro ao carregar dados:', error);
-            atualizarStatusConexao(false);
-        });
-
-        // Abrir formulário
+        // ============================================
+        // FUNÇÕES DA ABA DE MANUTENÇÃO
+        // ============================================
         window.abrirForm = function() {
             document.getElementById('formulario').classList.add('ativo');
             document.getElementById('formulario').scrollIntoView({ behavior: 'smooth' });
         };
 
-        // Fechar formulário
         window.fecharForm = function() {
             document.getElementById('formulario').classList.remove('ativo');
             document.getElementById('form').reset();
@@ -649,7 +1045,6 @@
             editandoId = null;
         };
 
-        // Calcular dias em manutenção
         document.getElementById('dataInicio').addEventListener('change', calcularDias);
         document.getElementById('dataRetorno').addEventListener('change', calcularDias);
 
@@ -667,9 +1062,13 @@
             }
         }
 
-        // Salvar registro
         window.salvar = async function(e) {
             e.preventDefault();
+            
+            if (!firebaseIniciado) {
+                alert('❌ Sistema não está conectado. Tente recarregar a página.');
+                return;
+            }
             
             const formData = new FormData(e.target);
             const registro = {};
@@ -688,12 +1087,11 @@
                 }
                 fecharForm();
             } catch (error) {
-                console.error('Erro ao salvar:', error);
-                alert('❌ Erro ao salvar registro: ' + error.message);
+                mostrarErro('Erro ao salvar registro', error);
+                alert('❌ Erro ao salvar: ' + error.message);
             }
         };
 
-        // Editar registro
         window.editar = function(id) {
             const registro = dados.find(d => d.id === id);
             if (!registro) return;
@@ -711,20 +1109,18 @@
             abrirForm();
         };
 
-        // Excluir registro
         window.excluir = async function(id) {
-            if (confirm('⚠️ Deseja realmente excluir este registro?')) {
-                try {
-                    await deleteDoc(doc(db, 'veiculos', id));
-                    alert('✅ Registro excluído!');
-                } catch (error) {
-                    console.error('Erro ao excluir:', error);
-                    alert('❌ Erro ao excluir registro!');
-                }
+            if (!confirm('⚠️ Deseja realmente excluir este registro?')) return;
+            
+            try {
+                await deleteDoc(doc(db, 'veiculos', id));
+                alert('✅ Registro excluído!');
+            } catch (error) {
+                mostrarErro('Erro ao excluir', error);
+                alert('❌ Erro ao excluir!');
             }
         };
 
-        // Exibir tabela
         function exibir() {
             const tbody = document.getElementById('tbody');
             const filtroStatus = document.getElementById('filtroStatus').value;
@@ -753,9 +1149,9 @@
             tbody.innerHTML = registros.map(r => `
                 <tr>
                     <td><strong>${r.regional || '-'}</strong></td>
-                    <td><span class="status-badge ${r.status === 'Em manutenção' ? 'badge-em-manutencao' : 'badge-finalizada'}">${r.status}</span></td>
+                    <td><span class="status-badge $${r.status === 'Em manutenção' ? 'badge-em-manutencao' : 'badge-finalizada'}">$${r.status}</span></td>
                     <td>${r.frota}</td>
-                    <td>${r.classe || '<span style="color:#dc3545;font-weight:bold">⚠️ Não informada</span>'}</td>
+                    <td>${r.classe || '-'}</td>
                     <td>${r.placa}</td>
                     <td>${r.cidade}</td>
                     <td>${formatarData(r.dataInicio)}</td>
@@ -770,7 +1166,7 @@
                     <td>${r.cidadeVeiculoReserva || '-'}</td>
                     <td>${r.impactouEquipe}</td>
                     <td>${r.descricaoImpacto || '-'}</td>
-                    <td>
+                    <td style="white-space:nowrap">
                         <button class="btn-editar" onclick="editar('${r.id}')">✏️</button>
                         <button class="btn-excluir" onclick="excluir('${r.id}')">🗑️</button>
                     </td>
@@ -778,26 +1174,292 @@
             `).join('');
         }
 
-        // Filtrar tabela
         window.filtrar = function() {
             exibir();
         };
 
-        // Atualizar estatísticas
         function atualizarStats() {
             document.getElementById('total').textContent = dados.length;
             document.getElementById('emManutencao').textContent = dados.filter(d => d.status === 'Em manutenção').length;
             document.getElementById('finalizado').textContent = dados.filter(d => d.status === 'Manutenção finalizada').length;
         }
 
-        // Formatar data
+        // ============================================
+        // FUNÇÕES DA ABA DE DISPONIBILIDADE
+        // ============================================
+        window.atualizarDisponibilidade = function() {
+            const filtroRegional = document.getElementById('filtroDispRegional').value;
+            const filtroClasse = document.getElementById('filtroDispClasse').value;
+
+            let frotaFiltrada = dadosFrota;
+            
+            if (filtroRegional !== 'todos') {
+                frotaFiltrada = frotaFiltrada.filter(v => v.regional === filtroRegional);
+            }
+            
+            if (filtroClasse !== 'todos') {
+                frotaFiltrada = frotaFiltrada.filter(v => v.classe === filtroClasse);
+            }
+
+            const totalFrota = frotaFiltrada.length;
+
+            let manutencoesAtivas = dados.filter(d => d.status === 'Em manutenção');
+            
+            if (filtroRegional !== 'todos') {
+                manutencoesAtivas = manutencoesAtivas.filter(d => d.regional === filtroRegional);
+            }
+            
+            if (filtroClasse !== 'todos') {
+                manutencoesAtivas = manutencoesAtivas.filter(d => d.classe === filtroClasse);
+            }
+
+            const veiculosIndisponiveis = manutencoesAtivas.filter(d => 
+                d.temVeiculoReserva !== 'Sim'
+            ).length;
+
+            const veiculosDisponiveis = totalFrota - veiculosIndisponiveis;
+            const percentual = totalFrota > 0 ? ((veiculosDisponiveis / totalFrota) * 100).toFixed(1) : 0;
+
+            document.getElementById('totalFrota').textContent = totalFrota;
+            document.getElementById('veiculosManutencao').textContent = veiculosIndisponiveis;
+            document.getElementById('veiculosDisponiveis').textContent = veiculosDisponiveis;
+            document.getElementById('percentualDisponivel').textContent = percentual + '%';
+        };
+
+        // ============================================
+        // FUNÇÕES DA ABA DE GESTÃO DA FROTA
+        // ============================================
+        window.abrirFormFrota = function() {
+            document.getElementById('formularioFrota').classList.add('ativo');
+            document.getElementById('formularioImportacao').classList.remove('ativo');
+            document.getElementById('formularioFrota').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.fecharFormFrota = function() {
+            document.getElementById('formularioFrota').classList.remove('ativo');
+            document.getElementById('formFrota').reset();
+            editandoFrotaId = null;
+        };
+
+        window.salvarFrota = async function(e) {
+            e.preventDefault();
+            
+            if (!firebaseIniciado) {
+                alert('❌ Sistema não está conectado. Tente recarregar a página.');
+                return;
+            }
+            
+            const formData = new FormData(e.target);
+            const registro = {};
+            
+            for (let [key, value] of formData.entries()) {
+                if (key !== 'id') registro[key] = value;
+            }
+
+            try {
+                if (editandoFrotaId) {
+                    await updateDoc(doc(db, 'frota', editandoFrotaId), registro);
+                    alert('✅ Veículo atualizado com sucesso!');
+                } else {
+                    await addDoc(colecaoFrota, registro);
+                    alert('✅ Veículo cadastrado com sucesso!');
+                }
+                fecharFormFrota();
+            } catch (error) {
+                mostrarErro('Erro ao salvar veículo', error);
+                alert('❌ Erro ao salvar: ' + error.message);
+            }
+        };
+
+        window.editarFrota = function(id) {
+            const veiculo = dadosFrota.find(v => v.id === id);
+            if (!veiculo) return;
+
+            editandoFrotaId = id;
+            const form = document.getElementById('formFrota');
+            
+            for (let key in veiculo) {
+                if (key !== 'id') {
+                    const campo = form.querySelector(`[name="${key}"]`);
+                    if (campo) campo.value = veiculo[key] || '';
+                }
+            }
+
+            abrirFormFrota();
+        };
+
+        window.excluirFrota = async function(id) {
+            if (!confirm('⚠️ Deseja realmente excluir este veículo da frota?')) return;
+            
+            try {
+                await deleteDoc(doc(db, 'frota', id));
+                alert('✅ Veículo excluído!');
+            } catch (error) {
+                mostrarErro('Erro ao excluir veículo', error);
+                alert('❌ Erro ao excluir!');
+            }
+        };
+
+        function exibirFrota() {
+            const tbody = document.getElementById('tbodyFrota');
+
+            if (dadosFrota.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="vazio">📋 Nenhum veículo cadastrado na frota</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = dadosFrota.map(v => `
+                <tr>
+                    <td><strong>${v.numero}</strong></td>
+                    <td>${v.placa}</td>
+                    <td>${v.classe}</td>
+                    <td>${v.proprioLocado}</td>
+                    <td>${v.regional}</td>
+                    <td>${v.equipe}</td>
+                    <td>${v.local}</td>
+                    <td style="white-space:nowrap">
+                        <button class="btn-editar" onclick="editarFrota('${v.id}')">✏️</button>
+                        <button class="btn-excluir" onclick="excluirFrota('${v.id}')">🗑️</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        window.abrirImportacaoLote = function() {
+            document.getElementById('formularioImportacao').classList.add('ativo');
+            document.getElementById('formularioFrota').classList.remove('ativo');
+            document.getElementById('formularioImportacao').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.fecharImportacao = function() {
+            document.getElementById('formularioImportacao').classList.remove('ativo');
+            document.getElementById('dadosImportacao').value = '';
+        };
+
+        window.processarImportacao = async function() {
+            const texto = document.getElementById('dadosImportacao').value.trim();
+            
+            if (!texto) {
+                alert('⚠️ Cole os dados para importação!');
+                return;
+            }
+
+            if (!firebaseIniciado) {
+                alert('❌ Sistema não está conectado. Tente recarregar a página.');
+                return;
+            }
+
+            const linhas = texto.split('\n').filter(l => l.trim());
+            let sucesso = 0;
+            let erros = 0;
+            const errosDetalhados = [];
+
+            for (let i = 0; i < linhas.length; i++) {
+                const linha = linhas[i].trim();
+                const campos = linha.split('|').map(c => c.trim());
+
+                if (campos.length !== 7) {
+                    erros++;
+                    errosDetalhados.push(`Linha $${i + 1}: formato inválido (esperado 7 campos, encontrado $${campos.length})`);
+                    continue;
+                }
+
+                const [numero, placa, classe, proprioLocado, regional, equipe, local] = campos;
+
+                if (!numero || !placa || !classe || !proprioLocado || !regional || !equipe || !local) {
+                    erros++;
+                    errosDetalhados.push(`Linha ${i + 1}: campos vazios`);
+                    continue;
+                }
+
+                const classesValidas = ['Caminhonetes', 'Veículos de passageiro', 'Caminhões leves', 'Caminhões pesados'];
+                if (!classesValidas.includes(classe)) {
+                    erros++;
+                    errosDetalhados.push(`Linha $${i + 1}: classe inválida "$${classe}"`);
+                    continue;
+                }
+
+                if (proprioLocado !== 'Próprio' && proprioLocado !== 'Locado') {
+                    erros++;
+                    errosDetalhados.push(`Linha ${i + 1}: Próprio/Locado deve ser "Próprio" ou "Locado"`);
+                    continue;
+                }
+
+                const regionaisValidas = ['Linhas', 'Centro', 'Norte', 'Sudeste', 'Triângulo', 'Leste'];
+                if (!regionaisValidas.includes(regional)) {
+                    erros++;
+                    errosDetalhados.push(`Linha $${i + 1}: regional inválida "$${regional}"`);
+                    continue;
+                }
+
+                try {
+                    await addDoc(colecaoFrota, {
+                        numero,
+                        placa,
+                        classe,
+                        proprioLocado,
+                        regional,
+                        equipe,
+                        local
+                    });
+                    sucesso++;
+                } catch (error) {
+                    erros++;
+                    errosDetalhados.push(`Linha $${i + 1}: erro ao salvar - $${error.message}`);
+                }
+            }
+
+            let mensagem = `✅ Importação concluída!\n\n`;
+            mensagem += `✔️ Veículos importados: ${sucesso}\n`;
+            if (erros > 0) {
+                mensagem += `❌ Erros: ${erros}\n\n`;
+                mensagem += `Detalhes dos erros:\n${errosDetalhados.join('\n')}`;
+            }
+
+            alert(mensagem);
+            
+            if (sucesso > 0) {
+                fecharImportacao();
+            }
+        };
+
+        window.exportarFrotaExcel = function() {
+            if (dadosFrota.length === 0) {
+                alert('⚠️ Não há dados da frota para exportar!');
+                return;
+            }
+
+            let csv = '\uFEFF';
+            csv += 'Número;Placa;Classe;Próprio/Locado;Regional;Equipe;Local\n';
+
+            dadosFrota.forEach(v => {
+                csv += `$${v.numero};$${v.placa};$${v.classe};$${v.proprioLocado};$${v.regional};$${v.equipe};${v.local}\n`;
+            });
+
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            
+            const dataHoje = new Date().toISOString().split('T')[0];
+            link.download = `frota_veiculos_${dataHoje}.csv`;
+            
+            link.click();
+            
+            alert(`✅ Excel da frota exportado com sucesso!\n\nTotal de veículos: ${dadosFrota.length}`);
+        };
+
+        // ============================================
+        // FUNÇÕES AUXILIARES
+        // ============================================
         function formatarData(data) {
             if (!data) return '-';
             const partes = data.split('-');
-            return partes[2] + '/' + partes[1] + '/' + partes[0];
+            return `$${partes[2]}/$${partes[1]}/${partes[0]}`;
         }
 
-        // Exportar Excel
+        // ============================================
+        // EXPORTAÇÃO EXCEL (MANUTENÇÃO)
+        // ============================================
         window.exportarExcel = function() {
             if (dados.length === 0) {
                 alert('⚠️ Não há dados para exportar!');
@@ -810,76 +1472,44 @@
             
             let registros = dados;
             
-            if (filtroStatus !== 'todos') {
-                registros = registros.filter(d => d.status === filtroStatus);
-            }
-            
-            if (filtroRegional !== 'todos') {
-                registros = registros.filter(d => d.regional === filtroRegional);
-            }
-
-            if (filtroClasse !== 'todos') {
-                registros = registros.filter(d => d.classe === filtroClasse);}
+            if (filtroStatus !== 'todos') registros = registros.filter(d => d.status === filtroStatus);
+            if (filtroRegional !== 'todos') registros = registros.filter(d => d.regional === filtroRegional);
+            if (filtroClasse !== 'todos') registros = registros.filter(d => d.classe === filtroClasse);
 
             if (registros.length === 0) {
                 alert('⚠️ Nenhum registro encontrado com os filtros aplicados!');
                 return;
             }
 
-            // Função para limpar dados e evitar quebra de linha
-            function limparTexto(texto) {
+            function limpar(texto) {
                 if (!texto || texto === '-') return '';
-                return String(texto)
-                    .replace(/\r\n/g, ' ')
-                    .replace(/\n/g, ' ')
-                    .replace(/\r/g, ' ')
-                    .replace(/;/g, ',')
-                    .replace(/"/g, '""')
-                    .trim();
+                return String(texto).replace(/\r\n/g, ' ').replace(/\n/g, ' ').replace(/\r/g, ' ').replace(/;/g, ',').trim();
             }
 
-            // Cabeçalho do CSV
             let csv = '\uFEFF';
             csv += 'Regional;Status;Frota;Classe;Placa;Cidade;Data Início;Data Retorno;Dias;Chamado;';
             csv += 'Descrição Defeito;Observação;Tem Reserva;Data Receb. Reserva;Tipo Reserva;';
             csv += 'Cidade Reserva;Impactou Equipe;Descrição Impacto\n';
 
-            // Dados
             registros.forEach(r => {
-                csv += `${limparTexto(r.regional)};`;
-                csv += `${limparTexto(r.status)};`;
-                csv += `${limparTexto(r.frota)};`;
-                csv += `${limparTexto(r.classe)};`;
-                csv += `${limparTexto(r.placa)};`;
-                csv += `${limparTexto(r.cidade)};`;
-                csv += `${formatarData(r.dataInicio)};`;
-                csv += `${formatarData(r.dataRetorno)};`;
-                csv += `${limparTexto(r.diasManutencao)};`;
-                csv += `${limparTexto(r.chamado)};`;
-                csv += `${limparTexto(r.descricaoDefeito)};`;
-                csv += `${limparTexto(r.observacao)};`;
-                csv += `${limparTexto(r.temVeiculoReserva)};`;
-                csv += `${formatarData(r.dataRecebimentoReserva)};`;
-                csv += `${limparTexto(r.tipoVeiculoReserva)};`;
-                csv += `${limparTexto(r.cidadeVeiculoReserva)};`;
-                csv += `${limparTexto(r.impactouEquipe)};`;
-                csv += `${limparTexto(r.descricaoImpacto)}\n`;
+                csv += `$${limpar(r.regional)};$${limpar(r.status)};$${limpar(r.frota)};$${limpar(r.classe)};`;
+                csv += `$${limpar(r.placa)};$${limpar(r.cidade)};$${formatarData(r.dataInicio)};$${formatarData(r.dataRetorno)};`;
+                csv += `$${limpar(r.diasManutencao)};$${limpar(r.chamado)};$${limpar(r.descricaoDefeito)};$${limpar(r.observacao)};`;
+                csv += `$${limpar(r.temVeiculoReserva)};$${formatarData(r.dataRecebimentoReserva)};${limpar(r.tipoVeiculoReserva)};`;
+                csv += `$${limpar(r.cidadeVeiculoReserva)};$${limpar(r.impactouEquipe)};${limpar(r.descricaoImpacto)}\n`;
             });
 
-            // Criar e baixar arquivo
             const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
-            
-            const dataHoje = new Date().toISOString().split('T')[0];
-            link.download = `veiculos_manutencao_${dataHoje}.csv`;
-            
+            link.download = `veiculos_manutencao_${new Date().toISOString().split('T')[0]}.csv`;
             link.click();
             
-            alert(`✅ Excel exportado com sucesso!\n\nTotal de registros: ${registros.length}`);
-        };
+            alert(`✅ Excel exportado!\nTotal: ${registros.length}`);};
 
-        // Exportar Word
+        // ============================================
+        // EXPORTAÇÃO WORD (MANUTENÇÃO)
+        // ============================================
         window.exportarWord = function() {
             if (dados.length === 0) {
                 alert('⚠️ Não há dados para exportar!');
@@ -942,10 +1572,7 @@ h1{color:#0f2027;font-size:2em;margin-bottom:8px}
 .rodape{margin-top:50px;text-align:center;color:#999;font-size:0.9em;border-top:2px solid #ddd;padding-top:20px}
 .regional-destaque{background:#2c5364;color:white;padding:8px 15px;border-radius:5px;display:inline-block;margin-bottom:10px}
 .classe-badge{background:#ffc107;color:#000;padding:6px 12px;border-radius:5px;font-weight:bold;display:inline-block}
-@media print{
-    body{margin:20px}
-    .veiculo{page-break-inside:avoid}
-}
+@media print{body{margin:20px}.veiculo{page-break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -957,8 +1584,7 @@ h1{color:#0f2027;font-size:2em;margin-bottom:8px}
 <p><strong>Data de Geração:</strong> ${new Date().toLocaleString('pt-BR')}</p>
 <p><strong>Total de Registros:</strong> ${registros.length}</p>
 </div>
-</div>
-`;
+</div>`;
 
             registros.forEach((r, i) => {
                 html += `
@@ -1050,8 +1676,7 @@ h1{color:#0f2027;font-size:2em;margin-bottom:8px}
         <span class="valor">${r.descricaoImpacto || 'Sem impactos registrados'}</span>
     </div>
 </div>
-${i < registros.length - 1 ? '<hr class="separador">' : ''}
-`;
+${i < registros.length - 1 ? '<hr class="separador">' : ''}`;
             });
 
             html += `
@@ -1069,21 +1694,16 @@ ${i < registros.length - 1 ? '<hr class="separador">' : ''}
             link.href = URL.createObjectURL(blob);
             
             let nomeArquivo = 'relatorio_';
-            if (filtroRegional !== 'todos') {
-                nomeArquivo += filtroRegional.toLowerCase() + '_';
-            }
-            if (filtroClasse !== 'todos') {
-                nomeArquivo += filtroClasse.toLowerCase().replace(/\s/g, '_') + '_';
-            }
-            if (filtroStatus !== 'todos') {
-                nomeArquivo += filtroStatus.toLowerCase().replace(/\s/g, '_') + '_';
-            }
+            if (filtroRegional !== 'todos') nomeArquivo += filtroRegional.toLowerCase() + '_';
+            if (filtroClasse !== 'todos') nomeArquivo += filtroClasse.toLowerCase().replace(/\s/g, '_') + '_';
+            if (filtroStatus !== 'todos') nomeArquivo += filtroStatus.toLowerCase().replace(/\s/g, '_') + '_';
             
             link.download = nomeArquivo + new Date().toISOString().split('T')[0] + '.doc';
             link.click();
             
             alert(`✅ Word exportado com sucesso!\n\nFiltros: ${tituloFiltro}\nTotal de registros: ${registros.length}`);
         };
+
     </script>
 </body>
 </html>
