@@ -1168,7 +1168,7 @@ function calcularDias() {
                     <td>${r.cidade}</td>
                     <td>${formatarData(r.dataInicio)}</td>
                     <td>${formatarData(r.dataRetorno)}</td>
-                    <td>${r.diasManutencao || '-'}</td>
+                    <td>${calcularDiasExibicao(r.dataInicio, r.dataRetorno, r.diasManutencao)}</td>
                     <td>${r.chamado || '-'}</td>
                     <td>${r.descricaoDefeito || '-'}</td>
                     <td>${r.observacao || '-'}</td>
@@ -1187,6 +1187,29 @@ function calcularDias() {
         }
 
         window.filtrar = function() {
+            function calcularDiasExibicao(dataInicio, dataRetorno, diasManutencao) {
+    // Se já tem o valor calculado, usa ele
+    if (diasManutencao) return diasManutencao;
+    
+    // Se não tem data de início, retorna vazio
+    if (!dataInicio) return '-';
+    
+    const d1 = new Date(dataInicio + 'T00:00:00');
+    let d2;
+    
+    if (dataRetorno) {
+        d2 = new Date(dataRetorno + 'T00:00:00');
+    } else {
+        // Usa data atual se não tiver data de retorno
+        d2 = new Date();
+        d2.setHours(0, 0, 0, 0);
+    }
+    
+    const diferenca = d2 - d1;
+    const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24));
+    
+    return dias >= 0 ? dias : 0;
+}
             exibir();
         };
 
