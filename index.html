@@ -1046,21 +1046,33 @@
         };
 
         document.getElementById('dataInicio').addEventListener('change', calcularDias);
-        document.getElementById('dataRetorno').addEventListener('change', calcularDias);
+document.getElementById('dataRetorno').addEventListener('change', calcularDias);
 
-        function calcularDias() {
-            const inicio = document.getElementById('dataInicio').value;
-            const retorno = document.getElementById('dataRetorno').value;
-            
-            if (inicio && retorno) {
-                const d1 = new Date(inicio + 'T00:00:00');
-                const d2 = new Date(retorno + 'T00:00:00');
-                const diferenca = d2 - d1;
-                const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24));
-                
-                document.getElementById('diasManutencao').value = dias >= 0 ? dias : 0;
-            }
+function calcularDias() {
+    const inicio = document.getElementById('dataInicio').value;
+    const retorno = document.getElementById('dataRetorno').value;
+    
+    if (inicio) {
+        const d1 = new Date(inicio + 'T00:00:00');
+        let d2;
+        
+        if (retorno) {
+            // Se tem data de retorno, usa ela
+            d2 = new Date(retorno + 'T00:00:00');
+        } else {
+            // Se NÃO tem data de retorno, usa a data atual (ainda em manutenção)
+            d2 = new Date();
+            d2.setHours(0, 0, 0, 0); // Zera as horas para contar dias completos
         }
+        
+        const diferenca = d2 - d1;
+        const dias = Math.floor(diferenca / (1000 * 60 * 60 * 24));
+        
+        document.getElementById('diasManutencao').value = dias >= 0 ? dias : 0;
+    } else {
+        document.getElementById('diasManutencao').value = '';
+    }
+}
 
         window.salvar = async function(e) {
             e.preventDefault();
